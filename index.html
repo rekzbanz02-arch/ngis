@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messenger: @Rekz Banz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #19124e;
+      color: #fefeff;
+    }
+    h1 { color: #fefeff; }
+    button {
+      padding: 15px 30px;
+      font-size: 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover { background-color: #0056b3; }
+    button:disabled { background-color: #ccc; cursor: default; }
+    .question { margin-bottom: 25px; }
+    .correct { color: #00ff88; font-weight: bold; }
+    .wrong { color: #ff5577; font-weight: bold; }
+    .highlight { margin-top: 10px; }
+    input[type="radio"] { transform: scale(1.5); margin-right: 10px; }
+    #finishBtn { font-size: 2em; padding: .1em 1em; }
+    .nav-buttons { margin-top: 20px; display: flex; gap: 10px; }
+
+    #codeInput {
+      font-size: 15px;
+      padding: 10px 20px;
+      width: 300px;
+      border-radius: 8px;
+      border: 2px solid #888;
+    }
+
+    #codeInput::placeholder { font-size: 15px; }
+
+    /* Smaller font for Enter Access Code */
+    #accessSection h2 {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+
+    /* Style for filename display above access code */
+    #fileDisplay {
+      font-size: 1.3em;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #9fe3ff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="accessSection">
+    <p id="fileDisplay"></p> <!-- NEW filename display -->
+    <h2>Enter Access Code: '12345'</h2>
+    <div style="position:relative; display:inline-block;">
+      <input type="password" id="codeInput" placeholder="Enter code here"
+        style="padding-right:45px;">
+    
+      <span id="toggleEye"
+        style="
+          position:absolute;
+          right:12px;
+          top:50%;
+          transform:translateY(-50%);
+          cursor:pointer;
+          font-size:20px;
+          color:#9fe3ff;
+          user-select:none;
+        "
+      >👁️</span>
+    </div>
+    
+    <br>
+    <button type="button" id="accessSubmit" style="padding:10px 40px; font-size:20px;">Login</button>
+
+    <span id="contactLink" style="margin-left:16px; font-size:14px; text-decoration:underline; cursor:pointer; color:#9fe3ff;">
+     Contact here! 
+    </span>
+
+
+    <p id="message" aria-live="polite"></p>
+    <br>
+    <p id="tipsArea">Loading tips...</p>
+  </div>
+
+  <div id="mainContent" style="display:none;">
+    <div id="reviewerSection">
+      <h1>Reviewer: NGIS</h1>
+ 
+ 
+ 
+      <button onclick="showQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quizSection" style="display:none;">
+      <h1>Quiz: NGIS</h1>
+      <p style="font-size: 15px; font-weight: 600; margin: 0;">Multiple-Choice Quiz (random items)</p>
+      <form id="quizForm"></form>
+
+      <div class="nav-buttons">
+        <button id="finishBtn">Score</button>
+        <button type="button" onclick="refreshQuiz()">Restart Quiz</button>
+        <button type="button" onclick="backToReviewer()">Reviewer</button>
+      </div>
+      <div id="result" class="highlight"></div>
+    </div>
+  </div>
+
+<!-- CONTACT POPUP MODAL -->
+<div id="contactModalBG" style="
+  display:none; 
+  position:fixed; 
+  top:0; left:0; 
+  width:100%; height:100%; 
+  background:rgba(0,0,0,0.6); 
+  z-index:1000;
+">
+  <div id="contactModal" style="
+    background:#ffffff; 
+    color:#000; 
+    width:90%; 
+    max-width:450px; 
+    margin:80px auto; 
+    padding:25px; 
+    border-radius:12px; 
+    box-shadow:0 0 15px rgba(0,0,0,0.5);
+  ">
+
+    <h2 style="margin-top:0; font-size:22px; text-align:center;">
+      Fill-in with your details here. <br>I'll contact you shortly!
+    </h2>
+
+    <label>Name:</label>
+    <input id="c_name" type="text" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <label>Contact No.:</label>
+    <input id="c_contact" type="text" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <label>Social Media Account:</label>
+    <input id="c_social" type="text" style="width:100%; padding:8px; margin-bottom:10px;">
+
+    <label>Request / Comment:</label>
+    <textarea id="c_request" style="width:100%; padding:8px; margin-bottom:10px; height:80px;"></textarea>
+
+    <button id="c_submit" style="
+      width:100%; padding:10px; 
+      background:#007BFF; color:#fff; border:none; border-radius:6px;
+      margin-top:10px; font-size:18px;
+    ">Submit</button>
+
+    <button id="c_close" style="
+      width:100%; padding:10px; 
+      background:#444; color:#fff; border:none; border-radius:6px;
+      margin-top:10px; font-size:18px;
+    ">Close</button>
+<!--
+    <p style="margin-top:20px; font-size:20px; text-align:center; color:#333;">
+      or you can contact this messenger: <b>@Rekz Banz</b>
+    </p>
+-->
+
+  </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // ===== SHOW / HIDE PASSWORD TOGGLE =====
+    const toggleEye = document.getElementById("toggleEye");
+  const codeInputEye = document.getElementById("codeInput");
+
+  toggleEye.addEventListener("click", () => {
+    if (codeInputEye.type === "password") {
+      codeInputEye.type = "text";
+      toggleEye.textContent = "🙈"; // hide icon
+    } else {
+      codeInputEye.type = "password";
+      toggleEye.textContent = "👁️"; // show icon
+    }
+  });
+
+  // ===== Display filename on login page =====
+  const quizTitleEl = document.querySelector("#quizSection h1");
+  const displayFileName = quizTitleEl ? quizTitleEl.textContent.replace("Quiz: ", "").trim() : "index.html";
+  const fileDisplay = document.getElementById("fileDisplay");
+  if (fileDisplay) fileDisplay.textContent = displayFileName;
+
+  // ===== SETTINGS =====
+  const BIN_URL_CODE = "https://api.jsonbin.io/v3/b/68ec7ba7d0ea881f409fea07/latest";
+  const BIN_URL_TIPS = "https://api.jsonbin.io/v3/b/68f1b652ae596e708f180d5d/latest";
+  const MASTER_KEY_CODE = "$2a$10$CvK4w8DTXZ1//5H1cpGQIerIT8Kzvk0FQHosdNm.XS0Q9n6sMmaf6";
+  const MASTER_KEY_TIPS = "$2a$10$CvK4w8DTXZ1//5H1cpGQIerIT8Kzvk0FQHosdNm.XS0Q9n6sMmaf6";
+
+  // === LOGGER BIN (Access Log) ===
+  const BIN_URL_LOG = "https://api.jsonbin.io/v3/b/6911a123d0ea881f40df102a";
+  const MASTER_KEY_LOG = MASTER_KEY_CODE;
+
+  // === SCORE LOG BIN (New) ===
+  const BIN_URL_SCORE = "https://api.jsonbin.io/v3/b/6912985cd0ea881f40e0cf7c";
+  const MASTER_KEY_SCORE = MASTER_KEY_CODE;
+
+  // ===== ELEMENTS =====
+  const accessSection = document.getElementById("accessSection");
+  const mainContent = document.getElementById("mainContent");
+  const codeInput = document.getElementById("codeInput");
+  const accessSubmit = document.getElementById("accessSubmit");
+  const message = document.getElementById("message");
+  const tipsArea = document.getElementById("tipsArea");
+
+// ===============================
+// CONTACT MODAL LOGIC (WORKING)
+// ===============================
+
+// open modal
+const contactLink = document.getElementById("contactLink");
+const contactBG = document.getElementById("contactModalBG");
+const contactClose = document.getElementById("c_close");
+const contactSubmit = document.getElementById("c_submit");
+
+if (contactLink && contactBG) {
+  contactLink.addEventListener("click", () => {
+    contactBG.style.display = "block";
+  });
+}
+
+if (contactClose && contactBG) {
+  contactClose.addEventListener("click", () => {
+    contactBG.style.display = "none";
+  });
+}
+// ===============================
+// CONTACT SUBMISSION SAVE LOGIC
+// ===============================
+const BIN_CONTACT_LOG = "https://api.jsonbin.io/v3/b/69146372d0ea881f40e3989e";
+const MASTER_KEY_CONTACT = MASTER_KEY_CODE;
+
+if (contactSubmit) {
+  contactSubmit.addEventListener("click", async () => {
+    const name = document.getElementById("c_name").value.trim();
+    const contact = document.getElementById("c_contact").value.trim();
+    const social = document.getElementById("c_social").value.trim();
+    const request = document.getElementById("c_request").value.trim();
+
+    if (!name || !contact || !request) {
+      alert("Please fill out name, contact, and request/comment.");
+      return;
+    }
+
+    const quizTitleElLocal = document.querySelector("#quizSection h1");
+    const fileName = quizTitleElLocal
+      ? quizTitleElLocal.textContent.replace("Quiz: ", "").trim()
+      : "index.html";
+
+    const deviceInfo = await getDeviceInfo();
+
+    try {
+      const getRes = await fetch(`${BIN_CONTACT_LOG}/latest`, {
+        headers: { "X-Master-Key": MASTER_KEY_CONTACT }
+      });
+      const data = await getRes.json();
+      const logs = Array.isArray(data.record) ? data.record : [];
+
+      logs.push({
+        event: "Client Request",
+        request,
+        name,
+        contact,
+        social,
+        filename: fileName,
+        timestamp: new Date().toLocaleString(),
+        device: deviceInfo
+      });
+
+      await fetch(BIN_CONTACT_LOG, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY_CONTACT
+        },
+        body: JSON.stringify(logs)
+      });
+
+      alert("Message sent!");
+      contactBG.style.display = "none";
+
+    } catch (err) {
+      alert("Error sending contact message.");
+      console.error(err);
+    }
+  });
+}
+
+
+
+  // ===== HELPERS =====
+  function findStringKey(obj, keyName) {
+    if (!obj || typeof obj !== "object") return undefined;
+    for (const k in obj) {
+      if (k.toLowerCase() === keyName.toLowerCase() && typeof obj[k] === "string") {
+        return obj[k];
+      }
+      const v = obj[k];
+      if (typeof v === "object") {
+        const nested = findStringKey(v, keyName);
+        if (nested) return nested;
+      }
+    }
+  }
+
+  async function getDeviceInfo() {
+    const uaData = navigator.userAgentData || {};
+    const ua = navigator.userAgent;
+    const platform = navigator.platform;
+    const language = navigator.language;
+    const screenResolution = `${window.screen.width}x${window.screen.height}`;
+    const browserVersion = uaData.brands
+      ? uaData.brands.map(b => `${b.brand} ${b.version}`).join(", ")
+      : ua;
+
+    // Determine general device type
+    const uaLower = ua.toLowerCase();
+    let deviceType = "desktop";
+    if (/mobi|iphone|android/i.test(uaLower)) {
+      deviceType = "mobile";
+    } else if (/tablet|ipad|nexus 7|nexus 10/i.test(uaLower)) {
+      deviceType = "tablet";
+    }
+
+    // Get approximate IP + region/country info (non-identifying)
+    let networkInfo = "Unavailable";
+    try {
+      const res = await fetch("https://ipapi.co/json/");
+      if (res.ok) {
+        const info = await res.json();
+        networkInfo = {
+          ip: info.ip,
+          city: info.city,
+          region: info.region,
+          country: info.country_name,
+          org: info.org
+        };
+      }
+    } catch {
+      networkInfo = "Network lookup failed";
+    }
+
+    // Optional: request geolocation with user consent
+    const location = await new Promise(resolve => {
+      if (!navigator.geolocation) return resolve("Geolocation not supported");
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        }),
+        () => resolve("Permission denied or unavailable"),
+        { timeout: 5000 }
+      );
+    });
+
+    return {
+      ua,
+      browserVersion,
+      platform,
+      language,
+      screenResolution,
+      deviceType,
+      networkInfo,
+      location
+    };
+  }
+
+  async function saveLoginToJsonBin(codeUsed) {
+    try {
+      // get filename from quiz title h1
+      const quizTitleElLocal = document.querySelector("#quizSection h1");
+      const fileName = quizTitleElLocal ? quizTitleElLocal.textContent.replace("Quiz: ", "").trim() : "index.html";
+
+      const getRes = await fetch(`${BIN_URL_LOG}/latest`, {
+        headers: { "X-Master-Key": MASTER_KEY_LOG }
+      });
+      const data = await getRes.json();
+      const logs = Array.isArray(data.record) ? data.record : [];
+
+      const deviceInfo = await getDeviceInfo();
+
+      logs.push({
+        event: "Login Access",
+        accessCode: codeUsed,
+        filename: fileName,
+        timestamp: new Date().toLocaleString(),
+        device: deviceInfo
+      });
+
+      await fetch(BIN_URL_LOG, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY_LOG
+        },
+        body: JSON.stringify(logs)
+      });
+
+      console.log(`✅ Login logged successfully (file: ${fileName}).`);
+    } catch (err) {
+      console.error("❌ Error logging to JSONBin:", err);
+    }
+  }
+
+  // ===== LOAD TIPS =====
+  async function loadTips() {
+    try {
+      const resp = await fetch(BIN_URL_TIPS, {
+        headers: { "X-Master-Key": MASTER_KEY_TIPS, "Content-Type": "application/json" }
+      });
+      const data = await resp.json();
+      const tipsText =
+        findStringKey(data, "tips") ||
+        "Tips: <br>Press Enter after typing the code.<br>Stay online when entering.<br>For help, contact messenger: @Rekz Banz";
+      tipsArea.innerHTML = tipsText;
+    } catch (err) {
+      console.error("Tips fetch error:", err);
+      tipsArea.innerHTML =
+        "Could not load page. Please check your internet connection.";
+    }
+  }
+  loadTips();
+
+  // === NEW FUNCTION: Save Quiz Score to JSONBin ===
+  async function saveScoreToJsonBin(score, total) {
+    try {
+      const quizTitleElLocal = document.querySelector("#quizSection h1");
+      const fileName = quizTitleElLocal ? quizTitleElLocal.textContent.replace("Quiz: ", "").trim() : "index.html";
+
+      const getRes = await fetch(`${BIN_URL_SCORE}/latest`, {
+        headers: { "X-Master-Key": MASTER_KEY_SCORE }
+      });
+      const data = await getRes.json();
+      const logs = Array.isArray(data.record) ? data.record : [];
+      const deviceInfo = await getDeviceInfo();
+
+      logs.push({
+        event: "Quiz Score",
+        score: `${score}/${total}`,
+        filename: fileName,
+        timestamp: new Date().toLocaleString(),
+        device: deviceInfo
+      });
+
+      await fetch(BIN_URL_SCORE, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": MASTER_KEY_SCORE
+        },
+        body: JSON.stringify(logs)
+      });
+      console.log("✅ Quiz score saved to JSONBin successfully.");
+    } catch (err) {
+      console.error("❌ Error saving quiz score:", err);
+    }
+  }
+
+  // ===== LOCAL STORAGE =====
+  const fileName = window.location.pathname.split("/").pop() || "default";
+  const storageKey = "savedAccessCode_" + fileName.replace(/\W+/g, "_");
+  const savedCode = localStorage.getItem(storageKey);
+  if (savedCode) codeInput.value = savedCode;
+  codeInput.addEventListener("input", () =>
+    localStorage.setItem(storageKey, codeInput.value)
+  );
+
+  // ===== LOGIN HANDLER =====
+  codeInput.addEventListener("keyup", (e) => {
+    if (e.key === "Enter") accessSubmit.click();
+  });
+
+  accessSubmit.addEventListener("click", async () => {
+    const input = codeInput.value.trim();
+    if (!input) {
+      message.textContent = "Please enter the access code.";
+      return;
+    }
+
+    accessSubmit.disabled = true;
+    codeInput.disabled = true;
+    message.textContent = "Checking...";
+
+    try {
+      const resp = await fetch(BIN_URL_CODE, {
+        headers: { "X-Master-Key": MASTER_KEY_CODE, "Content-Type": "application/json" }
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+
+      const remoteCode =
+        findStringKey(data, "accessCode") ||
+        findStringKey(data, "code") ||
+        findStringKey(data, "access");
+
+      if (!remoteCode) {
+        message.textContent = "Access code not found in storage record.";
+        throw new Error("No accessCode in JSON");
+      }
+
+      if (input === remoteCode.trim()) {
+        accessSection.style.display = "none";
+        mainContent.style.display = "block";
+        message.textContent = "";
+        saveLoginToJsonBin(input); // <<== AUTO LOG TO JSONBIN
+        setTimeout(() => {
+          const btn = document.querySelector("#mainContent button");
+          if (btn) btn.focus();
+        }, 100);
+      } else {
+        message.textContent = "Wrong code. Please refer to contact";
+        localStorage.removeItem(storageKey);
+        accessSubmit.disabled = false;
+        codeInput.disabled = false;
+      }
+    } catch (err) {
+      console.error("Access fetch error:", err);
+      message.textContent = "Error fetching code. Check console for details.";
+      accessSubmit.disabled = false;
+      codeInput.disabled = false;
+    }
+  });
+
+  // ===== QUIZ LOGIC =====
+  const pool = [
+  
+  
+{q: "What are the objectives of UCPER under NGIS?", choices: ["To promote consistency in crime recording, prescribe uniform reporting procedures, and serve as the basis for anti-criminality policies and programs.", "To track police attendance.", "To replace the payroll system.", "To measure barangay performance.", "To control police media statements.", "To schedule police training programs."], correctIndex: 0}, 
+{q: "The CIDMS provides investigators with what major benefit?", choices: ["Easy access and management of case files, systematic recording, and cross-referencing of cases.", "Budget control for police stations.", "Recruitment management.", "Population tracking.", "Vehicle tracking.", "Court scheduling."], correctIndex: 0}, 
+{q: "What principle stresses the importance of gathering crime information from multiple sources?", choices: ["The UCPER principle that the Chief of Police must ensure data are gathered from all sources like NBI, PDEA, BFAR, and others.", "The principle of single-source reporting.", "The principle of selective investigation.", "The principle of confidentiality.", "The principle of random sampling.", "The principle of proportional recording."], correctIndex: 0}, 
+{q: "Before the introduction of e-Subpoena, what common challenge did the courts face?", choices: ["Subpoenas often failed to reach concerned PNP personnel, leading to postponed or cancelled court proceedings.", "Courts had too many digital subpoenas.", "Subpoenas were always sent on time.", "There was no issue with subpoena tracking.", "Courts used barcodes for subpoenas.", "All subpoenas were automated."], correctIndex: 0}, 
+{q: "What happens if a PNP unit fails to comply with UCPER guidelines?", choices: ["They are liable for neglect of duty; intentional manipulation of data is a serious irregularity.", "They receive a commendation.", "They are promoted automatically.", "They are given more resources.", "They are exempted from reporting.", "They are reassigned to another unit."], correctIndex: 0}, 
+{q: "What NGIS component is used specifically for handling and managing police case records?", choices: ["CIDMS (Case Information Database Management System).", "CIRAS.", "e-Subpoena.", "e-Warrant.", "e-Rogue.", "UCPER."], correctIndex: 0}, 
+{q: "Who among the following is not permitted to update case entries in CIDMS?", choices: ["Trainer accounts, as their data are for teaching and not treated as actual case data.", "Investigators.", "Supervisors.", "Encoders.", "DIDM administrators.", "Chief of Police."], correctIndex: 0}, 
+{q: "Who is tasked with ensuring the timely delivery and receipt of subpoenas?", choices: ["The court and PNP unit administrators through the e-Subpoena system.", "Barangay captains.", "CIDMS administrators.", "Traffic enforcers.", "Regional directors.", "Private couriers."], correctIndex: 0}, 
+{q: "The e-Subpoena system ensures subpoenas are served:", choices: ["Electronically tracked, properly delivered, and acknowledged by concerned PNP personnel.", "Through physical delivery only.", "Without tracking confirmation.", "By text message only.", "By oral notification.", "Through social media."], correctIndex: 0}, 
+{q: "What is the central purpose of the e-Rogue system?", choices: ["To create a searchable electronic rogues gallery of suspects and criminals with photographs for easy identification.", "To record attendance.", "To manage police payroll.", "To handle traffic reports.", "To issue subpoenas.", "To record crime statistics."], correctIndex: 0}, 
+{q: "Who is considered the main end-user of CIDMS?", choices: ["Investigators and case monitoring personnel.", "Judges.", "Prosecutors.", "Civilians.", "Barangay officers.", "Media staff."], correctIndex: 0}, 
+{q: "What is the main purpose of the NGIS?", choices: ["To integrate PNP investigation tools and electronic systems for improved crime reporting, case management, and investigative efficiency.", "To manage police payroll.", "To train barangay tanods.", "To automate court trials.", "To replace manual fingerprinting.", "To generate arrest warrants."], correctIndex: 0}, 
+{q: "What is one of the major goals of CIRAS?", choices: ["To institutionalize crime reporting, provide timely crime data, and enhance investigation tools across PNP units.", "To automate payroll distribution.", "To assign daily tasks to officers.", "To manage PNP vehicle logs.", "To generate attendance records.", "To replace CIDMS."], correctIndex: 0}, 
+{q: "How does e-Rogue improve investigative work?", choices: ["By providing quick visual identification of suspects and linking cases through photos and personal data.", "By monitoring police schedules.", "By storing payroll data.", "By creating reports for courts.", "By summarizing statistics.", "By storing barangay records."], correctIndex: 0}, 
+{q: "e-WPIS, under NGIS, is a tool for ______.", choices: ["Managing electronic warrant and person information records for investigators.", "Tracking payroll deductions.", "Recording vehicle registration.", "Storing court transcripts.", "Organizing evidence photos.", "Generating police calendars."], correctIndex: 0}, 
+{q: "The CIRAS system primarily deals with ______.", choices: ["Crime incident reporting and analysis through e-blotter data.", "Budget allocation.", "Traffic control.", "Recruitment documentation.", "Barangay ordinance violations.", "Court attendance logs."], correctIndex: 0}, 
+{q: "The e-Warrant Person Information System (e-WPIS) is designed primarily as ______.", choices: ["An electronic database of warrants of arrest to help investigators track and retrieve information.", "A payroll computation tool.", "A social media tracker.", "A report generator.", "A timekeeping system.", "A communication hub."], correctIndex: 0}, 
+{q: "What form is automatically generated by the CIRAS system?", choices: ["Incident Report Form (IRF).", "Case Brief Form.", "Court Appearance Form.", "Vehicle Log Sheet.", "Evidence Turnover Form.", "Training Report Form."], correctIndex: 0}, 
+{q: "At the national level, what office primarily oversees the implementation of CIDMS?", choices: ["DIDM (Directorate for Investigation and Detective Management).", "PNP ITMS.", "Supreme Court.", "DOJ.", "Regional Offices.", "Barangay Councils."], correctIndex: 0}, 
+{q: "A primary objective of e-Subpoena is to, what?", choices: ["Deliver subpoenas efficiently, monitor compliance, provide feedback, and archive related documents.", "Broadcast subpoenas publicly.", "Digitize barangay records.", "Notify only media outlets.", "Replace court systems.", "Manage police payroll."], correctIndex: 0}, 
+{q: "What unit of the PNP is primarily responsible for overseeing NGIS implementation nationwide?", choices: ["DIDM (Directorate for Investigation and Detective Management).", "PNP Training Service.", "DOJ.", "PNP Finance Office.", "NBI.", "DICT."], correctIndex: 0}, 
+{q: "Which NGIS component helps avoid manipulation of crime statistics by ensuring uniform standards?", choices: ["UCPER (Unit Crime Periodic Report).", "CIDMS.", "e-Rogue.", "e-Warrant.", "CIRAS.", "ITMS."], correctIndex: 0}, 
+{q: "A police investigator uses NGIS to retrieve a suspect’s mugshot and previous cases. What module is he using?", choices: ["e-Rogue System.", "CIDMS.", "CIRAS.", "e-Subpoena.", "e-Warrant.", "UCPER."], correctIndex: 0}, 
+{q: "Which of these actions is an example of intentional data manipulation?", choices: ["False entry of crime volume", "Proper statistical analysis", "Using NSO population data", "Timely submission", "Accurate case clearance", "Following standard counting mechanism"], correctIndex: 0}, 
+{q: "e-Rogue is most useful for:", choices: ["Identifying suspects through mugshots and linking them to previous or ongoing cases.", "Tracking attendance of officers.", "Managing police vehicles.", "Recording payroll data.", "Creating crime maps.", "Sending subpoenas."], correctIndex: 0}, 
+{q: "What is the role of IT Officers or PNCOs in CIDMS rollout?", choices: ["Provide technical assistance, install and maintain the system, and ensure user training during deployment.", "Investigate crimes.", "Conduct patrols.", "Monitor arrests.", "Manage finances.", "Write case reports."], correctIndex: 0}, 
+{q: "What PNP unit initially used CIDMS before it was enhanced by DIDM with ITMS assistance?", choices: ["CIDG (Criminal Investigation and Detection Group).", "PNP PRO.", "DILG.", "DOJ.", "Regional Command.", "Barangay Task Force."], correctIndex: 0}, 
+{q: "Ignoring or failing to comply with UCPER guidelines is considered ______.", choices: ["Neglect of duty.", "A commendation.", "A training error.", "A minor mistake.", "A best practice.", "A voluntary act."], correctIndex: 0}, 
+{q: "What is the role of IT Officers in NGIS systems?", choices: ["Provide system installation, maintenance, troubleshooting, and user account management.", "Conduct investigations.", "Approve legal decisions.", "File subpoenas.", "Oversee patrol routes.", "Review training exams."], correctIndex: 0}, 
+{q: "What is the purpose of e-Warrant?", choices: ["To electronically track and manage warrants of arrest for faster access and accountability.", "To record traffic violations.", "To schedule hearings.", "To report physical injuries.", "To manage property inventory.", "To record evidence handling."], correctIndex: 0}, 
+{q: "Who ensures the timely delivery of subpoenas under e-Subpoena?", choices: ["Court administrators and concerned PNP units via the e-Subpoena system.", "The barangay chairman.", "Regional prosecutors.", "CIDMS officers.", "NBI clerks.", "Police trainees."], correctIndex: 0}, 
+{q: "The digital transition under NGIS improves efficiency mainly by ______.", choices: ["Automating and centralizing records, reducing manual delays, and enabling real-time data access.", "Increasing paperwork.", "Outsourcing police tasks.", "Removing records permanently.", "Delaying investigations.", "Eliminating accountability."], correctIndex: 0}, 
+{q: "Why is NGIS critical for modern policing?", choices: ["It modernizes investigation through integrated, data-driven systems essential for accurate and efficient law enforcement.", "It recruits new police officers.", "It centralizes payroll.", "It manages barangay affairs.", "It digitizes old archives only.", "It focuses only on HR data."], correctIndex: 0}, 
+{q: "The introduction of CIRAS replaced which outdated practice?", choices: ["The manual/paper blotter or stand-alone CIRS system.", "The payroll tracking method.", "The barangay census system.", "The physical warrant registry.", "The manual attendance log.", "The paper-based subpoena filing."], correctIndex: 0}, 
+{q: "Which of the following best describes NGIS?", choices: ["A centralized payroll platform", "A barangay crime reporting tool", "A comprehensive system integrating investigation tools", "A nationwide intelligence program", "A training simulation module", "A case appeal portal"], correctIndex: 2}, 
+{q: "What advantage does e-Warrant provide over the traditional system?", choices: ["It allows faster electronic search and retrieval of warrant data, preventing record loss and delays.", "It removes warrants entirely.", "It increases manual filing.", "It reduces transparency.", "It slows investigations.", "It limits access to local courts only."], correctIndex: 0}, 
+{q: "What advantage does e-Warrant provide over the traditional system?", choices: ["It allows faster, more accurate, and centralized tracking of warrants of arrest, minimizing record loss and delays.", "It increases manual filing time and paperwork.", "It requires physical presence for verification.", "It limits access to only local courts.", "It replaces CIDMS entirely.", "It eliminates records after one year."], correctIndex: 0}, 
+{q: "What issue was resolved by CIRAS compared to the traditional process?", choices: ["It replaced the manual blotter system, enabling faster, standardized, and more accurate electronic crime reporting.", "It introduced new uniforms for police personnel.", "It automated salary disbursement for officers.", "It replaced the national census system.", "It removed the need for crime data collection.", "It limited access to crime reports."], correctIndex: 0}, 
+{q: "What is the primary function of CIDMS? The abbreviation CIDMS refers to what system?", choices: ["CIDMS stands for Case Information Database Management System, used for managing, tracking, and updating police case records.", "CIDMS means Central Investigation Data Mapping System, used for population control.", "CIDMS stands for Criminal Index Data Mapping Structure, used for payroll.", "CIDMS refers to Case Inventory Departmental Management Software, used for barangay reports.", "CIDMS means Centralized Inquiry for Disaster Monitoring System, used for weather updates.", "CIDMS stands for Crime Investigation Data Messaging System, used for public announcements."], correctIndex: 0}, 
+{q: "The introduction of e-Subpoena helped solve what common problem?", choices: ["It eliminated the frequent delays and failures in delivering subpoenas manually, ensuring timely receipt and acknowledgment by police personnel.", "It replaced payroll systems for subpoenas.", "It allowed only manual subpoena tracking.", "It delayed court proceedings further.", "It required handwritten records for all subpoenas.", "It removed subpoena accountability."], correctIndex: 0}
+
+
+  ];
+
+// === UPDATE QUIZ TITLE (selected/total items) ===
+function updateQuizTitleCount(selectedCount) {
+  const quizTitleEl = document.querySelector("#quizSection h1");
+  if (quizTitleEl) {
+    const totalItems = pool.filter(item => item && item.q && item.choices).length;
+    quizTitleEl.textContent = `Quiz: NGIS\n (${selectedCount}/${totalItems} items)`;
+  }
+}
+
+  function pickRandom(arr, n) {
+    const copy = [...arr];
+    const result = [];
+    while (result.length < n && copy.length > 0) {
+      const idx = Math.floor(Math.random() * copy.length);
+      result.push(copy.splice(idx, 1)[0]);
+    }
+    return result;
+  }
+
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  function selectRandomChoices(item) {
+    const correctChoice = item.choices[item.correctIndex];
+    let others = item.choices.filter((_, idx) => idx !== item.correctIndex);
+    shuffleArray(others);
+    let selected = [correctChoice, ...others.slice(0, 4)];
+    shuffleArray(selected);
+    item.correctIndex = selected.indexOf(correctChoice);
+    item.choices = selected;
+  }
+
+  let quizItems = [];
+
+  window.showQuiz = function () {
+    document.getElementById("reviewerSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "block";
+    buildQuiz();
+  };
+
+  window.backToReviewer = function () {
+    document.getElementById("quizSection").style.display = "none";
+    document.getElementById("reviewerSection").style.display = "block";
+    document.getElementById("quizForm").innerHTML = "";
+    document.getElementById("result").innerHTML = "";
+  };
+
+  window.refreshQuiz = function () {
+    document.getElementById("quizForm").innerHTML = "";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("finishBtn").disabled = false;
+    buildQuiz();
+  };
+
+  function buildQuiz() {
+    quizItems = pickRandom(pool, Math.min(10, pool.length));
+    const form = document.getElementById("quizForm");
+    form.innerHTML = "";
+    quizItems.forEach((item, i) => {
+      selectRandomChoices(item);
+      const div = document.createElement("div");
+      div.className = "question";
+      const q = document.createElement("p");
+      q.textContent = `${i + 1}. ${item.q}`;
+      div.appendChild(q);
+      item.choices.forEach((choice, idx) => {
+        const label = document.createElement("label");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = `q${i}`;
+        radio.value = idx;
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(" " + choice));
+        div.appendChild(label);
+        div.appendChild(document.createElement("br"));
+      });
+      form.appendChild(div);
+    });
+    updateQuizTitleCount(quizItems.length);
+  }
+
+  document.getElementById("finishBtn").addEventListener("click", async function () {
+    let score = 0;
+    const total = quizItems.length;
+    for (let i = 0; i < total; i++) {
+      const radios = document.querySelectorAll(`input[name="q${i}"]`);
+      let selected = -1;
+      radios.forEach(r => { if (r.checked) selected = parseInt(r.value); });
+      const div = document.getElementById("quizForm").children[i];
+      if (selected === quizItems[i].correctIndex) {
+        score++;
+        div.insertAdjacentHTML("beforeend", "<div class='correct'>✔ Correct</div>");
+      } else {
+        const correctAnswer = quizItems[i].choices[quizItems[i].correctIndex];
+        div.insertAdjacentHTML("beforeend", `<div class='wrong'>✘ Wrong. Correct: ${correctAnswer}</div>`);
+      }
+      radios.forEach(r => r.disabled = true);
+    }
+    document.getElementById("result").innerHTML = `<h2>Your Score: ${score} / ${total}</h2>`;
+    this.disabled = true;
+
+    // 🧠 Save score to JSONBin
+    await saveScoreToJsonBin(score, total);
+  });
+});
+</script>
+</body>
+</html>
